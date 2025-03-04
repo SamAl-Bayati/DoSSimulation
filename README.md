@@ -17,7 +17,11 @@ This project is for **educational** purposes only. It demonstrates how Denial of
 
 ## Usage
 
-1. **Install dependencies** (recommended to use a virtual environment):
+1. **clone repo and move to it** (recommended to use a virtual environment):
+    ```bash
+    git clone https://github.com/SamAl-Bayati/DoSSimulation.git
+    cd DoSSimulation
+    ```
 
 2. **Run the application**:
     ```bash
