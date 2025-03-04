@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time Monitor</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Real-Time Monitor</h1>
+
+        <canvas id="metricsChart" width="400" height="200"></canvas>
+
+        <a href="{{ url_for('index') }}" class="btn btn-secondary mt-4">Back to Dashboard</a>
+    </div>
+
+    <script>
+        var ctx = document.getElementById('metricsChart').getContext('2d');
+        var metricsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Current Connections',
+                        data: [],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    },
+                    {
+                        label: 'Blocked IPs',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'realtime',
+                        realtime: {
+                            delay: 2000,
+                            onRefresh: function(chart) {
+                                // Data is pushed via SocketIO
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        var socket = io();
+
+        socket.on('metrics', function(data) {
+            var currentTime = new Date().toLocaleTimeString();
+            metricsChart.data.labels.push(currentTime);
+            metricsChart.data.datasets[0].data.push(data.current_connections);
+            metricsChart.data.datasets[1].data.push(data.blocked_ips);
+            metricsChart.update();
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
+</body>
+</html>

@@ -1,55 +1,57 @@
-import argparse
+import threading
+import time
 import sys
 
+from ui.app import app, socketio
+from server.tcp_server import run_tcp_server
+from monitor.monitor import Monitor
+from defender.firewall import Firewall
 from attacker.syn_flood import syn_flood
 from attacker.udp_flood import udp_flood
 from attacker.http_flood import http_flood
-from server.tcp_server import run_tcp_server
-from monitor.monitor import start_monitor
+
+# Shared Firewall instance
+firewall = Firewall(rate_limit=30, block_threshold=50, block_time=60)
+
+# Shared Monitor instance
+monitor = Monitor(firewall)
+
+def start_flask_app():
+    # Run Flask app with SocketIO
+    socketio.run(app, host='0.0.0.0', port=5000)
+
+def start_tcp_server():
+    run_tcp_server(host='0.0.0.0', port=9999, firewall=firewall)
+
+def start_monitor():
+    monitor.run()
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="DoS Attack Simulation & Mitigation Tool"
-    )
-    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    # Start Flask app in a separate thread
+    flask_thread = threading.Thread(target=start_flask_app)
+    flask_thread.daemon = True
+    flask_thread.start()
+    print("[INFO] Flask web server started on http://0.0.0.0:5000")
 
-    # Server command
-    server_parser = subparsers.add_parser('server', help='Start the TCP server')
-    server_parser.add_argument('--port', type=int, default=9999, help='Port to run the server on')
-    server_parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind the server')
+    # Start TCP server in a separate thread
+    server_thread = threading.Thread(target=start_tcp_server)
+    server_thread.daemon = True
+    server_thread.start()
+    print("[INFO] TCP server started on port 9999")
 
-    # Monitor command
-    monitor_parser = subparsers.add_parser('monitor', help='Start the monitoring tool')
-    # No special arguments here, but you can add if needed
+    # Start Monitor in a separate thread
+    monitor_thread = threading.Thread(target=start_monitor)
+    monitor_thread.daemon = True
+    monitor_thread.start()
+    print("[INFO] Monitor started")
 
-    # Attack command
-    attack_parser = subparsers.add_parser('attack', help='Launch a DoS attack')
-    attack_parser.add_argument('--type', type=str, required=True, choices=['syn', 'udp', 'http'],
-                               help='Type of DoS attack (syn, udp, http)')
-    attack_parser.add_argument('--target', type=str, default='127.0.0.1', help='Target IP/Host')
-    attack_parser.add_argument('--port', type=int, default=80, help='Target Port')
-    attack_parser.add_argument('--duration', type=int, default=10, help='Attack duration in seconds')
-    attack_parser.add_argument('--rate', type=int, default=100, help='Approx. packets/sec or requests/sec')
-
-    args = parser.parse_args()
-
-    if args.command == 'server':
-        run_tcp_server(host=args.host, port=args.port)
-    elif args.command == 'monitor':
-        start_monitor()
-    elif args.command == 'attack':
-        if args.type == 'syn':
-            syn_flood(args.target, args.port, args.duration, args.rate)
-        elif args.type == 'udp':
-            udp_flood(args.target, args.port, args.duration, args.rate)
-        elif args.type == 'http':
-            http_flood(args.target, args.port, args.duration, args.rate)
-    else:
-        parser.print_help()
+    # Keep the main thread alive
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[INFO] Shutting down...")
+        sys.exit(0)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nExiting... (Keyboard Interrupt)")
-        sys.exit(0)
+    main()

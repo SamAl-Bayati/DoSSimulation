@@ -6,6 +6,7 @@ class Firewall:
       - Tracks connection rate per IP
       - Blocks IPs that exceed a certain threshold
       - Automatically unblocks IPs after a block_time
+      - Allows enabling/disabling mitigations
     """
 
     def __init__(self, rate_limit=30, block_threshold=50, block_time=60):
@@ -18,11 +19,24 @@ class Firewall:
         self.block_threshold = block_threshold
         self.block_time = block_time
 
-        # Data structure to store: { ip: [(timestamp1, timestamp2, ...)], ...}
+        # Data structure to store: { ip: [timestamp1, timestamp2, ...], ...}
         self.connection_log = {}
 
         # Store blocked IP: { ip: unblock_timestamp }
         self.blocked_ips = {}
+
+        # Mitigation flags
+        self.mitigation_enabled = True
+
+    def enable_mitigation(self):
+        """Enable mitigation strategies."""
+        self.mitigation_enabled = True
+        print("[FIREWALL] Mitigations enabled.")
+
+    def disable_mitigation(self):
+        """Disable mitigation strategies."""
+        self.mitigation_enabled = False
+        print("[FIREWALL] Mitigations disabled.")
 
     def is_blocked(self, ip):
         """Check if IP is currently blocked."""
@@ -41,6 +55,9 @@ class Firewall:
         Updates logs and decides if the connection is allowed or blocked.
         Returns True if allowed, False if blocked.
         """
+        if not self.mitigation_enabled:
+            return True  # Allow all connections if mitigation is disabled
+
         current_time = time.time()
 
         if ip not in self.connection_log:
