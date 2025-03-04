@@ -6,6 +6,8 @@ import time
 from attacker.syn_flood import syn_flood
 from attacker.udp_flood import udp_flood
 from attacker.http_flood import http_flood
+from main import firewall
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key in production
@@ -19,7 +21,7 @@ active_attacks = {}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', firewall=firewall)
 
 @app.route('/start_attack', methods=['POST'])
 def start_attack():

@@ -1,6 +1,6 @@
-scapy
-matplotlib
-requests
-Flask
-flask-socketio
-eventlet
+python3-scapy
+python3-matplotlib
+python3-requests
+python3-flask
+python3-flask-socketio
+python3-eventlet
