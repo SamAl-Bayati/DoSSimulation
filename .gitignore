@@ -15,3 +15,5 @@ combine-files.ps1
 **/combine-files.ps1
 master.txt
 **/master.txt
+__pychache__/
+**/__pychache__/
