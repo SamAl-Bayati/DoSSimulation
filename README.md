@@ -18,13 +18,10 @@ This project is for **educational** purposes only. It demonstrates how Denial of
 ## Usage
 
 1. **Install dependencies** (recommended to use a virtual environment):
-    ```bash
-    pip install -r requirements.txt
-    ```
 
 2. **Run the application**:
     ```bash
-    ./run.sh
+    sudo ./run.sh
     ```
 
 3. **Access the web interface**:
