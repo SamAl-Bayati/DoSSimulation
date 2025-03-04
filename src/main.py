@@ -2,19 +2,14 @@ import threading
 import time
 import sys
 
+# Import the Flask app and SocketIO from app.py
 from ui.app import app, socketio
+
+# Import the shared instances from shared.py
+from shared import firewall, monitor
+
+# Import server logic
 from server.tcp_server import run_tcp_server
-from monitor.monitor import Monitor
-from defender.firewall import Firewall
-from attacker.syn_flood import syn_flood
-from attacker.udp_flood import udp_flood
-from attacker.http_flood import http_flood
-
-# Shared Firewall instance
-firewall = Firewall(rate_limit=30, block_threshold=50, block_time=60)
-
-# Shared Monitor instance
-monitor = Monitor(firewall)
 
 def start_flask_app():
     # Run Flask app with SocketIO

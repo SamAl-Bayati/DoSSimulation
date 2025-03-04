@@ -3,24 +3,24 @@ from flask_socketio import SocketIO, emit
 import threading
 import time
 
+# Attack modules
 from attacker.syn_flood import syn_flood
 from attacker.udp_flood import udp_flood
 from attacker.http_flood import http_flood
-from main import firewall
 
+# Import the shared instances (instead of from main)
+from shared import firewall, monitor
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a secure key in production
+app.secret_key = 'your_secret_key'
 socketio = SocketIO(app)
-
-# Import shared instances from main.py
-from main import firewall, monitor
 
 # Dictionary to keep track of running attacks
 active_attacks = {}
 
 @app.route('/')
 def index():
+    # Pass firewall so the template can reference firewall.rate_limit, etc.
     return render_template('index.html', firewall=firewall)
 
 @app.route('/start_attack', methods=['POST'])
@@ -35,7 +35,6 @@ def start_attack():
         flash(f"{attack_type.capitalize()} flood is already running.", "warning")
         return redirect(url_for('index'))
 
-    # Start attack in a new thread
     if attack_type == 'syn':
         attack_thread = threading.Thread(target=syn_flood, args=(target_ip, target_port, duration, rate))
     elif attack_type == 'udp':
@@ -59,8 +58,6 @@ def stop_attack():
         flash(f"No active {attack_type} flood found.", "warning")
         return redirect(url_for('index'))
 
-    # To stop threads in Python is non-trivial; for simplicity, we can let the attack run its course.
-    # Alternatively, implement a flag to signal threads to stop.
     flash(f"Stopping {attack_type} flood is not implemented.", "info")
     return redirect(url_for('index'))
 
@@ -81,6 +78,7 @@ def mitigations():
         flash("Mitigation settings updated.", "success")
         return redirect(url_for('mitigations'))
 
+    # Pass firewall so mitigations.html can access firewall properties
     return render_template('mitigations.html', firewall=firewall)
 
 @app.route('/enable_mitigation', methods=['POST'])
@@ -97,22 +95,24 @@ def disable_mitigation():
 
 @app.route('/monitor')
 def monitor_page():
-    return render_template('monitor.html')
+    return render_template('montior.html')
 
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
-    # Optionally, emit initial data
     emit_metrics()
 
 def emit_metrics():
     """
-    Emit metrics to connected clients periodically.
+    Emit metrics to connected clients every second.
     """
     while True:
-        time.sleep(1)
-        metrics = monitor.get_metrics()
-        socketio.emit('metrics', metrics)
+        try:
+            time.sleep(1)
+            metrics = monitor.get_metrics()
+            socketio.emit('metrics', metrics)
+        except KeyboardInterrupt:
+            break
 
 # Start emitting metrics in a background thread
 socketio.start_background_task(target=emit_metrics)
