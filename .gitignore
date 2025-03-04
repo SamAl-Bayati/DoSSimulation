@@ -1,0 +1,17 @@
+# Ignore environment variable files in the root or any subdirectory
+.env
+**/.env
+
+# Ignore node_modules folders in the root or any subdirectory
+node_modules/
+**/node_modules/
+
+# Ignore yarn lock files in the root or any subdirectory
+yarn.lock
+**/yarn.lock
+
+# Ignore others
+combine-files.ps1
+**/combine-files.ps1
+master.txt
+**/master.txt
