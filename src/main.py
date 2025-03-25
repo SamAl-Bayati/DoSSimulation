@@ -33,9 +33,9 @@ def main():
     monitor_thread.start()
     print("[INFO] Monitor started")
 
-    # Now, run the Flask server in the main thread
+    # Now, run the Flask server in the main thread with the reloader disabled
     print("[INFO] Starting Flask web server on http://0.0.0.0:5000")
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, use_reloader=False)
 
 if __name__ == '__main__':
     main()
