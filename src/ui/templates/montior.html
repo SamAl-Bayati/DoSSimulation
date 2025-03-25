@@ -27,7 +27,6 @@
     <script>
         var socket = io();
 
-        // Connections Chart
         var ctx1 = document.getElementById('connectionsChart').getContext('2d');
         var connectionsChart = new Chart(ctx1, {
             type: 'line',
@@ -59,7 +58,6 @@
             }
         });
 
-        // Denied Connections Chart
         var ctx2 = document.getElementById('deniedChart').getContext('2d');
         var deniedChart = new Chart(ctx2, {
             type: 'line',
@@ -99,20 +97,9 @@
 
         socket.on('metrics', function(data) {
             var now = Date.now();
-            // Push new data point for connections
-            connectionsChart.data.datasets[0].data.push({
-                x: now,
-                y: data.current_connections
-            });
-            // Push new data points for denied connections
-            deniedChart.data.datasets[0].data.push({
-                x: now,
-                y: data.denied_by_threshold
-            });
-            deniedChart.data.datasets[1].data.push({
-                x: now,
-                y: data.denied_by_blocked
-            });
+            connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
+            deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_by_threshold });
+            deniedChart.data.datasets[1].data.push({ x: now, y: data.denied_by_blocked });
             connectionsChart.update('quiet');
             deniedChart.update('quiet');
         });
