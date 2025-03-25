@@ -5,33 +5,39 @@ eventlet.monkey_patch()
 import threading
 import time
 import sys
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from ui.app import app, socketio
 from shared import firewall, monitor
 from server.tcp_server import run_tcp_server
 
 def start_tcp_server():
+    logging.info("Starting TCP server thread...")
     run_tcp_server(host='0.0.0.0', port=9999, firewall=firewall)
 
 def start_monitor():
+    logging.info("Starting monitor thread...")
     monitor.run()
 
 def main():
-    # Only start background threads if this is the main process.
-    # This avoids duplicate TCP server instantiation in reloader/debug modes.
+    logging.info("Main process starting. WERKZEUG_RUN_MAIN=%s", os.environ.get("WERKZEUG_RUN_MAIN"))
+    # Start background threads only once
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or os.environ.get("WERKZEUG_RUN_MAIN") is None:
         tcp_thread = threading.Thread(target=start_tcp_server)
         tcp_thread.daemon = True
         tcp_thread.start()
-        print("[INFO] TCP server started on port 9999")
+        logging.info("TCP server thread started.")
 
         monitor_thread = threading.Thread(target=start_monitor)
         monitor_thread.daemon = True
         monitor_thread.start()
-        print("[INFO] Monitor started")
+        logging.info("Monitor thread started.")
     
-    print("[INFO] Starting Flask web server on http://0.0.0.0:5000")
+    logging.info("Starting Flask web server on http://0.0.0.0:5000")
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    logging.info("Flask web server has stopped.")
 
 if __name__ == '__main__':
     main()
