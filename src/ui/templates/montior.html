@@ -6,36 +6,38 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
 </head>
 <body>
     <div class="container mt-4">
         <h1 class="mb-4">Real-Time Monitor</h1>
-
-        <canvas id="metricsChart" width="400" height="200"></canvas>
-
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Connections Over Time</h3>
+                <canvas id="connectionsChart" width="400" height="200"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h3>Denied Connections Over Time</h3>
+                <canvas id="deniedChart" width="400" height="200"></canvas>
+            </div>
+        </div>
         <a href="{{ url_for('index') }}" class="btn btn-secondary mt-4">Back to Dashboard</a>
     </div>
 
     <script>
-        var ctx = document.getElementById('metricsChart').getContext('2d');
-        var metricsChart = new Chart(ctx, {
+        var socket = io();
+
+        // Connections Chart
+        var ctx1 = document.getElementById('connectionsChart').getContext('2d');
+        var connectionsChart = new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Current Connections',
-                        data: [],
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        fill: false
-                    },
-                    {
-                        label: 'Blocked IPs',
-                        data: [],
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        fill: false
-                    }
-                ]
+                datasets: [{
+                    label: 'Current Connections',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    data: []
+                }]
             },
             options: {
                 scales: {
@@ -43,30 +45,77 @@
                         type: 'realtime',
                         realtime: {
                             delay: 2000,
-                            onRefresh: function(chart) {
-                                // Data is pushed via SocketIO
-                            }
+                            refresh: 1000
                         }
                     },
                     y: {
                         beginAtZero: true,
-                        suggestedMax: 100
+                        title: {
+                            display: true,
+                            text: 'Connections'
+                        }
                     }
                 }
             }
         });
 
-        var socket = io();
+        // Denied Connections Chart
+        var ctx2 = document.getElementById('deniedChart').getContext('2d');
+        var deniedChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Denied by Threshold',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    fill: false,
+                    data: []
+                },
+                {
+                    label: 'Denied (Already Blocked)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false,
+                    data: []
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'realtime',
+                        realtime: {
+                            delay: 2000,
+                            refresh: 1000
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Denied Connections'
+                        }
+                    }
+                }
+            }
+        });
 
         socket.on('metrics', function(data) {
-            var currentTime = new Date().toLocaleTimeString();
-            metricsChart.data.labels.push(currentTime);
-            metricsChart.data.datasets[0].data.push(data.current_connections);
-            metricsChart.data.datasets[1].data.push(data.blocked_ips);
-            metricsChart.update();
+            var now = Date.now();
+            // Push new data point for connections
+            connectionsChart.data.datasets[0].data.push({
+                x: now,
+                y: data.current_connections
+            });
+            // Push new data points for denied connections
+            deniedChart.data.datasets[0].data.push({
+                x: now,
+                y: data.denied_by_threshold
+            });
+            deniedChart.data.datasets[1].data.push({
+                x: now,
+                y: data.denied_by_blocked
+            });
+            connectionsChart.update('quiet');
+            deniedChart.update('quiet');
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
 </body>
 </html>

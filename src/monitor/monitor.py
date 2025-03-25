@@ -32,5 +32,8 @@ class Monitor:
         """
         return {
             'current_connections': self.current_connections,
-            'blocked_ips': self.blocked_ips
+            'blocked_ips': self.blocked_ips,
+            'denied_connections': self.firewall.denied_connections,
+            'denied_by_threshold': self.firewall.denied_by_threshold,
+            'denied_by_blocked': self.firewall.denied_by_blocked
         }

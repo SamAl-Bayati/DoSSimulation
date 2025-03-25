@@ -25,8 +25,13 @@ class Firewall:
         # Store blocked IP: { ip: unblock_timestamp }
         self.blocked_ips = {}
 
-        # Mitigation flags
+        # Mitigation flag
         self.mitigation_enabled = True
+
+        # NEW: Counters for monitoring denied connections
+        self.denied_connections = 0         # Total denied connections
+        self.denied_by_threshold = 0        # Denied because connection rate exceeded block_threshold
+        self.denied_by_blocked = 0          # Denied because IP was already blocked
 
     def enable_mitigation(self):
         """Enable mitigation strategies."""
@@ -46,6 +51,9 @@ class Firewall:
                 # Unblock IP
                 del self.blocked_ips[ip]
                 return False
+            # Count the connection as denied because it is already blocked
+            self.denied_connections += 1
+            self.denied_by_blocked += 1
             return True
         return False
 
@@ -72,8 +80,10 @@ class Firewall:
         current_rate = len(self.connection_log[ip])  # connections in the last minute
 
         if current_rate > self.block_threshold:
-            # Block IP
+            # Block IP and count the denial
             self.blocked_ips[ip] = current_time + self.block_time
+            self.denied_connections += 1
+            self.denied_by_threshold += 1
             print(f"[FIREWALL] Blocking IP {ip} for {self.block_time} seconds (Rate={current_rate} > {self.block_threshold}).")
             return False
 
