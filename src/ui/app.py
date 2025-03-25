@@ -18,6 +18,16 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app, logger=True, engineio_logger=True)
 
+# Log every incoming request
+@app.before_request
+def before_request():
+    app.logger.debug("Incoming request: %s %s", request.method, request.url)
+
+@app.after_request
+def after_request(response):
+    app.logger.debug("Response status: %s", response.status)
+    return response
+
 active_attacks = {}
 
 @app.route('/')
@@ -107,7 +117,7 @@ def emit_metrics():
     app.logger.debug("emit_metrics background task started.")
     while True:
         try:
-            eventlet.sleep(1)  # Using eventlet.sleep to yield properly
+            eventlet.sleep(1)  # Yield to the eventlet hub
             metrics = monitor.get_metrics()
             socketio.emit('metrics', metrics)
             app.logger.debug("Emitted metrics: %s", metrics)
