@@ -7,7 +7,8 @@ from attacker.udp_flood import udp_flood
 from attacker.http_flood import http_flood
 from shared import firewall, monitor
 
-app = Flask(__name__)
+# Use the templates folder located in the same directory
+app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app)
 
@@ -81,7 +82,8 @@ def disable_mitigation():
 
 @app.route('/monitor')
 def monitor_page():
-    return render_template('montior.html')
+    # Use "monitor.html" (note the corrected filename) instead of "montior.html"
+    return render_template('monitor.html')
 
 @socketio.on('connect')
 def handle_connect():
