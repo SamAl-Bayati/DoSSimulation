@@ -112,7 +112,7 @@ def monitor_page():
 @socketio.on('connect')
 def handle_connect():
     app.logger.debug("SocketIO client connected.")
-    emit_metrics()
+    # Do not call emit_metrics() here since the background task is already running.
 
 def emit_metrics():
     app.logger.debug("emit_metrics background task started.")
@@ -127,3 +127,6 @@ def emit_metrics():
             break
 
 socketio.start_background_task(target=emit_metrics)
+
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000)
