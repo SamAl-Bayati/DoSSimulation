@@ -11,6 +11,7 @@ class Firewall:
         self.denied_connections = 0
         self.denied_by_threshold = 0
         self.denied_by_blocked = 0
+        self.active_connections = 0
 
     def enable_mitigation(self):
         self.mitigation_enabled = True
@@ -33,6 +34,7 @@ class Firewall:
 
     def check_connection(self, ip):
         if not self.mitigation_enabled:
+            self.active_connections += 1
             return True
         current_time = time.time()
         if ip not in self.connection_log:
@@ -49,4 +51,9 @@ class Firewall:
             return False
         if current_rate > self.rate_limit:
             print(f"[FIREWALL] Warning: IP {ip} is exceeding the soft rate limit (Rate={current_rate}).")
+        self.active_connections += 1
         return True
+
+    def end_connection(self, ip):
+        if self.active_connections > 0:
+            self.active_connections -= 1

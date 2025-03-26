@@ -22,6 +22,7 @@ def handle_client(client_socket, client_address, firewall):
         pass
     finally:
         client_socket.close()
+        firewall.end_connection(ip)
 
 def run_tcp_server(host='0.0.0.0', port=9999, firewall=None):
     print(f"[INFO] Starting TCP server on {host}:{port}")
@@ -37,8 +38,8 @@ def run_tcp_server(host='0.0.0.0', port=9999, firewall=None):
     while True:
         try:
             client_socket, client_address = server.accept()
-            # Simulate a crash if mitigations are disabled and too many connections accumulate.
-            total_connections = sum(len(timestamps) for timestamps in firewall.connection_log.values())
+            total_connections = firewall.active_connections
+            # Optional: Simulate a crash if mitigations are disabled and too many connections accumulate.
             if not firewall.mitigation_enabled and total_connections > 100:
                 print("[CRASH] Too many connections! Server is crashing.")
                 raise Exception("Server Crash: Overwhelmed by connections")
