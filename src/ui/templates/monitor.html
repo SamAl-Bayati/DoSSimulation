@@ -55,7 +55,6 @@
 
       // === Connections Chart ===
       connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
-      // Debug: log new data array
       console.log("connectionsChart dataset:", connectionsChart.data.datasets[0].data);
 
       // === Denied Chart ===
@@ -88,17 +87,15 @@
           x: {
             type: 'realtime',
             realtime: {
-              // Show last 2 minutes of data
               duration: 120000,
               refresh: 1000,
               delay: 2000
             }
           },
           y: {
-            // allow large values (tens of thousands)
             type: 'linear',
             beginAtZero: true,
-            suggestedMax: 20000,
+            suggestedMax: 10,  // Start at a maximum of 10, then scale up if needed.
             title: {
               display: true,
               text: 'Connections'
@@ -143,7 +140,7 @@
           y: {
             type: 'linear',
             beginAtZero: true,
-            suggestedMax: 20000,
+            suggestedMax: 10,  // Start at a maximum of 10, then scale up if needed.
             title: {
               display: true,
               text: 'Denied Connections'
