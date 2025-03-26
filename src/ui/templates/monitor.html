@@ -5,23 +5,22 @@
   <title>Real-Time Monitor</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
 
-  <!-- Chart.js v3.7.1, plus Luxon, adapter, streaming plugin -->
+  <!-- Chart.js v3, plus Luxon, adapter, streaming plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.1/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
 
   <!-- Socket.IO v3 client -->
   <script src="https://cdn.socket.io/3.1.3/socket.io.min.js"></script>
-  
-  <!-- chartjs-plugin-streaming 2.0.0 -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
 </head>
 <body>
   <div class="container mt-4">
     <h1 class="mb-4">Real-Time Monitor</h1>
+
     <div class="row">
       <div class="col-md-6">
-        <h3>Connections Over Time</h3>
+        <h3>Active Connections Over Time</h3>
         <canvas id="connectionsChart" width="400" height="200"></canvas>
       </div>
       <div class="col-md-6">
@@ -29,11 +28,12 @@
         <canvas id="deniedChart" width="400" height="200"></canvas>
       </div>
     </div>
+
     <a href="{{ url_for('index') }}" class="btn btn-secondary mt-4">Back to Dashboard</a>
   </div>
 
   <script>
-    // Force websocket transport, enable logging
+    // Connect via websocket
     var socket = io({ transports: ['websocket'] });
 
     socket.on('connect', function() {
@@ -45,31 +45,23 @@
     socket.on('disconnect', function(reason) {
       console.log("Socket.IO: Disconnected. Reason:", reason);
     });
-    
-    // When the server emits 'metrics'
-    socket.on('metrics', function(data) {
-      console.log("Received metrics from server:", data);
 
-      // Current timestamp for the streaming x‐axis
+    // On metrics event
+    socket.on('metrics', function(data) {
       var now = Date.now();
 
-      // === Connections Chart ===
+      // 1) Current Connections
       connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
-      console.log("connectionsChart dataset:", connectionsChart.data.datasets[0].data);
 
-      // === Denied Chart ===
-      deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_by_threshold });
-      deniedChart.data.datasets[1].data.push({ x: now, y: data.denied_by_blocked });
-      console.log("deniedChart dataset[0] (Threshold):", deniedChart.data.datasets[0].data);
-      console.log("deniedChart dataset[1] (Blocked):", deniedChart.data.datasets[1].data);
+      // 2) Denied Connections (cumulative)
+      deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_connections });
 
-      // Update the charts without animation
       connectionsChart.update('none');
       deniedChart.update('none');
     });
 
     // ===========================
-    //    Connections Chart
+    //   Connections Chart
     // ===========================
     var ctx1 = document.getElementById('connectionsChart').getContext('2d');
     var connectionsChart = new Chart(ctx1, {
@@ -77,7 +69,43 @@
       data: {
         datasets: [{
           label: 'Current Connections',
-          borderColor: 'rgba(75, 192, 192, 1)',
+          borderColor: 'rgba(75,192,192,1)',
+          fill: false,
+          data: []
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            type: 'realtime',
+            realtime: {
+              duration: 120000,  // 2 minutes
+              refresh: 1000,
+              delay: 2000
+            }
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: 10,
+            title: {
+              display: true,
+              text: 'Connections'
+            }
+          }
+        }
+      }
+    });
+
+    // =========================
+    //   Denied Chart
+    // =========================
+    var ctx2 = document.getElementById('deniedChart').getContext('2d');
+    var deniedChart = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Denied Connections (cumulative)',
+          borderColor: 'rgba(255,99,132,1)',
           fill: false,
           data: []
         }]
@@ -93,57 +121,11 @@
             }
           },
           y: {
-            type: 'linear',
             beginAtZero: true,
-            suggestedMax: 10,  // Start at a maximum of 10, then scale up if needed.
+            suggestedMax: 10,
             title: {
               display: true,
-              text: 'Connections'
-            }
-          }
-        }
-      }
-    });
-
-    // =========================
-    //    Denied Chart
-    // =========================
-    var ctx2 = document.getElementById('deniedChart').getContext('2d');
-    var deniedChart = new Chart(ctx2, {
-      type: 'line',
-      data: {
-        datasets: [
-          {
-            label: 'Denied by Threshold',
-            borderColor: 'rgba(255, 159, 64, 1)',
-            fill: false,
-            data: []
-          },
-          {
-            label: 'Denied (Already Blocked)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            fill: false,
-            data: []
-          }
-        ]
-      },
-      options: {
-        scales: {
-          x: {
-            type: 'realtime',
-            realtime: {
-              duration: 120000,
-              refresh: 1000,
-              delay: 2000
-            }
-          },
-          y: {
-            type: 'linear',
-            beginAtZero: true,
-            suggestedMax: 10,  // Start at a maximum of 10, then scale up if needed.
-            title: {
-              display: true,
-              text: 'Denied Connections'
+              text: 'Denied'
             }
           }
         }

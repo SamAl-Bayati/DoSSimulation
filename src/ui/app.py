@@ -13,12 +13,11 @@ from shared import firewall, monitor
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Use the templates folder located in the same directory as this file
+# Use the templates folder in the same directory
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app, logger=True, engineio_logger=True)
 
-# Log every incoming request
 @app.before_request
 def before_request():
     app.logger.debug("Incoming request: %s %s", request.method, request.url)
@@ -37,34 +36,38 @@ def index():
 
 @app.route('/start_attack', methods=['POST'])
 def start_attack():
+    """
+    Launch a single attacker thread that runs the chosen DoS method.
+    """
     app.logger.debug("Start attack route accessed.")
     attack_type = request.form.get('attack_type')
     target_ip = request.form.get('target_ip', '127.0.0.1')
     target_port = int(request.form.get('target_port', 9999))
     duration = int(request.form.get('duration', 10))
     rate = int(request.form.get('rate', 100))
-    clients = int(request.form.get('clients', 10))
-    attack_threads = []
-    for i in range(clients):
-        if attack_type == 'syn':
-            # NOTE: This now calls our "TCP connect flood" version of syn_flood
-            t = threading.Thread(target=syn_flood, args=(target_ip, target_port, duration, rate))
-        elif attack_type == 'udp':
-            t = threading.Thread(target=udp_flood, args=(target_ip, target_port, duration, rate))
-        elif attack_type == 'http':
-            t = threading.Thread(target=http_flood, args=(target_ip, target_port, duration, rate))
-        else:
-            flash("Invalid attack type selected.", "danger")
-            return redirect(url_for('index'))
-        t.start()
-        attack_threads.append(t)
-        app.logger.debug("Started attack thread: %s", t.name)
-    active_attacks[attack_type] = attack_threads
-    flash(f"{attack_type.capitalize()} flood started with {clients} clients.", "success")
+
+    if attack_type == 'syn':
+        t = threading.Thread(target=syn_flood, args=(target_ip, target_port, duration, rate))
+    elif attack_type == 'udp':
+        t = threading.Thread(target=udp_flood, args=(target_ip, target_port, duration, rate))
+    elif attack_type == 'http':
+        t = threading.Thread(target=http_flood, args=(target_ip, target_port, duration, rate))
+    else:
+        flash("Invalid attack type selected.", "danger")
+        return redirect(url_for('index'))
+
+    t.start()
+    app.logger.debug("Started attack thread: %s", t.name)
+    active_attacks[attack_type] = t
+    flash(f"{attack_type.capitalize()} flood started.", "success")
     return redirect(url_for('monitor_page'))
 
 @app.route('/stop_attack', methods=['POST'])
 def stop_attack():
+    """
+    Stub: stopping the flood isn't currently implemented in your code,
+    because each attacker is just a simple function that ends after 'duration'.
+    """
     app.logger.debug("Stop attack route accessed.")
     attack_type = request.form.get('attack_type')
     if attack_type not in active_attacks:
@@ -80,11 +83,11 @@ def mitigations():
         rate_limit = request.form.get('rate_limit', type=int)
         block_threshold = request.form.get('block_threshold', type=int)
         block_time = request.form.get('block_time', type=int)
-        if rate_limit:
+        if rate_limit is not None:
             firewall.rate_limit = rate_limit
-        if block_threshold:
+        if block_threshold is not None:
             firewall.block_threshold = block_threshold
-        if block_time:
+        if block_time is not None:
             firewall.block_time = block_time
         flash("Mitigation settings updated.", "success")
         return redirect(url_for('mitigations'))
@@ -112,13 +115,15 @@ def monitor_page():
 @socketio.on('connect')
 def handle_connect():
     app.logger.debug("SocketIO client connected.")
-    # Do not call emit_metrics() here since the background task is already running.
 
 def emit_metrics():
+    """
+    Runs in the background, emitting metrics to all connected Socket.IO clients once per second.
+    """
     app.logger.debug("emit_metrics background task started.")
     while True:
+        eventlet.sleep(1)
         try:
-            eventlet.sleep(1)  # Yield to the eventlet hub
             metrics = monitor.get_metrics()
             socketio.emit('metrics', metrics)
             app.logger.debug("Emitted metrics: %s", metrics)
