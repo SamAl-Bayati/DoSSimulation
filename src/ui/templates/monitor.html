@@ -33,7 +33,7 @@
   </div>
 
   <script>
-    // Force websocket transport and add logging for debugging.
+    // Use websocket transport and log for debugging
     var socket = io({ transports: ['websocket'] });
 
     socket.on('connect', function() {
@@ -46,19 +46,21 @@
       console.log("Socket.IO: Disconnected. Reason:", reason);
     });
     
-    // When we receive new metrics, push data into the charts and update
+    // Receive metrics from server
     socket.on('metrics', function(data) {
       console.log("Received metrics:", data);
       var now = Date.now();
+      // Push data points into chart datasets
       connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
       deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_by_threshold });
       deniedChart.data.datasets[1].data.push({ x: now, y: data.denied_by_blocked });
-      // Use "none" or just .update() if you don't want "quiet" mode
+
+      // Update charts with no animation
       connectionsChart.update('none');
       deniedChart.update('none');
     });
 
-    // Set up the "Connections" chart
+    // Connections chart
     var ctx1 = document.getElementById('connectionsChart').getContext('2d');
     var connectionsChart = new Chart(ctx1, {
       type: 'line',
@@ -75,15 +77,17 @@
           x: {
             type: 'realtime',
             realtime: {
-              delay: 2000,
+              // Keep last 60s visible
+              duration: 60000,
               refresh: 1000,
-              onRefresh: function(chart) {
-                // We push new data on 'metrics' event, so nothing here
-              }
+              delay: 2000
             }
           },
           y: {
+            // Let us see values >= 60, 100, etc.
+            type: 'linear',
             beginAtZero: true,
+            suggestedMax: 200,
             title: {
               display: true,
               text: 'Connections'
@@ -93,7 +97,7 @@
       }
     });
 
-    // Set up the "Denied" chart
+    // Denied chart
     var ctx2 = document.getElementById('deniedChart').getContext('2d');
     var deniedChart = new Chart(ctx2, {
       type: 'line',
@@ -118,15 +122,15 @@
           x: {
             type: 'realtime',
             realtime: {
-              delay: 2000,
+              duration: 60000,
               refresh: 1000,
-              onRefresh: function(chart) {
-                // We push new data on 'metrics' event
-              }
+              delay: 2000
             }
           },
           y: {
+            type: 'linear',
             beginAtZero: true,
+            suggestedMax: 200,
             title: {
               display: true,
               text: 'Denied Connections'
