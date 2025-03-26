@@ -4,9 +4,16 @@
   <meta charset="UTF-8">
   <title>Real-Time Monitor</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Force use of the Socket.IO v3 client -->
+
+  <!-- Use a known-good combination of Chart.js, Luxon, adapter, and plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@2.3.1/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+
+  <!-- Socket.IO v3 client -->
   <script src="https://cdn.socket.io/3.1.3/socket.io.min.js"></script>
+  
+  <!-- chartjs-plugin-streaming 2.0.0 -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
 </head>
 <body>
@@ -38,16 +45,20 @@
     socket.on('disconnect', function(reason) {
       console.log("Socket.IO: Disconnected. Reason:", reason);
     });
+    
+    // When we receive new metrics, push data into the charts and update
     socket.on('metrics', function(data) {
       console.log("Received metrics:", data);
       var now = Date.now();
       connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
       deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_by_threshold });
       deniedChart.data.datasets[1].data.push({ x: now, y: data.denied_by_blocked });
-      connectionsChart.update('quiet');
-      deniedChart.update('quiet');
+      // Use "none" or just .update() if you don't want "quiet" mode
+      connectionsChart.update('none');
+      deniedChart.update('none');
     });
 
+    // Set up the "Connections" chart
     var ctx1 = document.getElementById('connectionsChart').getContext('2d');
     var connectionsChart = new Chart(ctx1, {
       type: 'line',
@@ -67,7 +78,7 @@
               delay: 2000,
               refresh: 1000,
               onRefresh: function(chart) {
-                // Data is pushed on event reception.
+                // We push new data on 'metrics' event, so nothing here
               }
             }
           },
@@ -82,22 +93,25 @@
       }
     });
 
+    // Set up the "Denied" chart
     var ctx2 = document.getElementById('deniedChart').getContext('2d');
     var deniedChart = new Chart(ctx2, {
       type: 'line',
       data: {
-        datasets: [{
-          label: 'Denied by Threshold',
-          borderColor: 'rgba(255, 159, 64, 1)',
-          fill: false,
-          data: []
-        },
-        {
-          label: 'Denied (Already Blocked)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          fill: false,
-          data: []
-        }]
+        datasets: [
+          {
+            label: 'Denied by Threshold',
+            borderColor: 'rgba(255, 159, 64, 1)',
+            fill: false,
+            data: []
+          },
+          {
+            label: 'Denied (Already Blocked)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            fill: false,
+            data: []
+          }
+        ]
       },
       options: {
         scales: {
@@ -107,7 +121,7 @@
               delay: 2000,
               refresh: 1000,
               onRefresh: function(chart) {
-                // Data is pushed on event reception.
+                // We push new data on 'metrics' event
               }
             }
           },
