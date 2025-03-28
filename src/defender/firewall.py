@@ -12,7 +12,7 @@ class Firewall:
 
         # Tracks how many connections are currently active (not blocked)
         self.active_connections = 0
-        
+
         # A single cumulative count of how many connections have been denied
         self.denied_connections = 0
 
@@ -23,6 +23,16 @@ class Firewall:
     def disable_mitigation(self):
         self.mitigation_enabled = False
         print("[FIREWALL] Mitigations disabled.")
+
+    def reset_caches(self):
+        """
+        Wipe all stored logs, blocked IPs, and counters.
+        """
+        self.connection_log = {}
+        self.blocked_ips = {}
+        self.active_connections = 0
+        self.denied_connections = 0
+        print("[FIREWALL] All caches/logs have been reset.")
 
     def is_blocked(self, ip):
         """

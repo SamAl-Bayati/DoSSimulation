@@ -1,4 +1,3 @@
-# File: src/ui/app.py
 import threading
 import eventlet
 import time
@@ -19,7 +18,6 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app, logger=True, engineio_logger=True)
 
-# Keep track of active attacks (if you want to add stop logic, etc.)
 active_attacks = {}
 
 @app.route('/', methods=['GET', 'POST'])
@@ -29,13 +27,13 @@ def index():
       - Displays real-time charts
       - Displays mitigation forms
       - Displays the "start attack" form
+      - Has a "clear cache" button
       - Processes form submissions (POST)
     """
     if request.method == 'POST':
         action = request.form.get('action')
 
         if action == 'update_mitigation':
-            # Update Firewall settings
             rate_limit = request.form.get('rate_limit', type=int)
             block_threshold = request.form.get('block_threshold', type=int)
             block_time = request.form.get('block_time', type=int)
@@ -55,8 +53,11 @@ def index():
             firewall.disable_mitigation()
             flash("Mitigations disabled.", "warning")
 
+        elif action == 'clear_cache':
+            firewall.reset_caches()
+            flash("Firewall caches/logs cleared.", "info")
+
         elif action == 'start_attack':
-            # Launch the chosen attack
             attack_type = request.form.get('attack_type')
             target_ip = request.form.get('target_ip', '127.0.0.1')
             target_port = int(request.form.get('target_port', 9999))
@@ -98,8 +99,7 @@ def emit_metrics():
             app.logger.error("Error in emit_metrics: %s", e)
             break
 
-
-# Start sending metrics to clients in the background
+# Start sending metrics in the background
 socketio.start_background_task(target=emit_metrics)
 
 if __name__ == '__main__':
