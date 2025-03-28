@@ -2,9 +2,7 @@ import socket
 import time
 
 def run_udp_server(host='0.0.0.0', port=9999, firewall=None):
-    """
-    Receives UDP packets, checks firewall, tracks packets for PPS, ends each 'connection' after a brief pause.
-    """
+    # Receives UDP packets, checks firewall, tracks packets for PPS, ends each 'connection' after a brief pause.
     print(f"[INFO] Starting UDP server on {host}:{port}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((host, port))

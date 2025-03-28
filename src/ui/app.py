@@ -20,9 +20,7 @@ active_attacks = {}
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """
-    Single page with real-time charts, mitigation forms, and an attack launcher.
-    """
+    # Single page with real-time charts, mitigation forms, and an attack launcher.
     if request.method == 'POST':
         action = request.form.get('action')
 

