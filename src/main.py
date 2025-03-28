@@ -12,8 +12,6 @@ logging.basicConfig(level=logging.DEBUG)
 from ui.app import app, socketio
 from shared import firewall, monitor
 from server.tcp_server import run_tcp_server
-
-# IMPORT THE NEW UDP SERVER
 from server.udp_server import run_udp_server
 
 def start_tcp_server():
@@ -30,29 +28,24 @@ def start_monitor():
 
 def main():
     logging.info("Main process starting. WERKZEUG_RUN_MAIN=%s", os.environ.get("WERKZEUG_RUN_MAIN"))
-
+    
     # Start background threads only once
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or os.environ.get("WERKZEUG_RUN_MAIN") is None:
-        
-        # 1) TCP server
         tcp_thread = threading.Thread(target=start_tcp_server)
         tcp_thread.daemon = True
         tcp_thread.start()
         logging.info("TCP server thread started.")
 
-        # 2) UDP server
         udp_thread = threading.Thread(target=start_udp_server)
         udp_thread.daemon = True
         udp_thread.start()
         logging.info("UDP server thread started.")
 
-        # 3) Monitor thread
         monitor_thread = threading.Thread(target=start_monitor)
         monitor_thread.daemon = True
         monitor_thread.start()
         logging.info("Monitor thread started.")
     
-    # Start Flask
     logging.info("Starting Flask web server on http://0.0.0.0:5000")
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, use_reloader=False)
     logging.info("Flask web server has stopped.")
