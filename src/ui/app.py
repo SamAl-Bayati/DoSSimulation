@@ -1,3 +1,4 @@
+# File: src/ui/app.py
 import threading
 import eventlet
 import time
