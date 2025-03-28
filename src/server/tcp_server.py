@@ -86,4 +86,4 @@ def run_tcp_server(host='0.0.0.0', port=9999, firewall=None):
 
             print("[INFO] Restarting server in 2 seconds...")
             time.sleep(2)
-            continue  # Loop back up, re-initialize the server
+            continue

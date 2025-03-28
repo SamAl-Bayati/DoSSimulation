@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 from ui.app import app, socketio
 from shared import firewall, monitor
 from server.tcp_server import run_tcp_server
-from server.udp_server import run_udp_server
+from server.udp_server import run_udp_server  # ADDED
 
 def start_tcp_server():
     logging.info("Starting TCP server thread...")
@@ -28,19 +28,22 @@ def start_monitor():
 
 def main():
     logging.info("Main process starting. WERKZEUG_RUN_MAIN=%s", os.environ.get("WERKZEUG_RUN_MAIN"))
-    
+
     # Start background threads only once
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or os.environ.get("WERKZEUG_RUN_MAIN") is None:
+        # TCP
         tcp_thread = threading.Thread(target=start_tcp_server)
         tcp_thread.daemon = True
         tcp_thread.start()
         logging.info("TCP server thread started.")
 
+        # UDP
         udp_thread = threading.Thread(target=start_udp_server)
         udp_thread.daemon = True
         udp_thread.start()
         logging.info("UDP server thread started.")
 
+        # Monitor
         monitor_thread = threading.Thread(target=start_monitor)
         monitor_thread.daemon = True
         monitor_thread.start()

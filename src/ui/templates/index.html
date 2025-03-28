@@ -33,7 +33,7 @@
 
     <h1 class="mb-4">DoS Attack Simulation and Mitigation Tool</h1>
 
-    <!-- 1. Real-Time Monitor Charts at the Top -->
+    <!-- Row #1: Active + Denied -->
     <div class="row">
       <div class="col-md-6">
         <h3>Active Connections Over Time</h3>
@@ -47,13 +47,23 @@
 
     <hr>
 
-    <!-- 2. Mitigation Controls (including Clear Cache) -->
+    <!-- Row #2: UDP PPS -->
+    <div class="row">
+      <div class="col-md-6">
+        <h3>UDP Packets Per Second</h3>
+        <canvas id="udpPacketsChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Mitigation Controls -->
     <div class="card mb-4">
         <div class="card-header">
             <h3>Mitigation Controls</h3>
         </div>
         <div class="card-body">
-            <!-- Update mitigation settings -->
+            <!-- Update mitigation -->
             <form method="POST">
                 <input type="hidden" name="action" value="update_mitigation">
                 <div class="form-group">
@@ -74,7 +84,6 @@
                 <button type="submit" class="btn btn-primary">Update Mitigation Settings</button>
             </form>
             <hr>
-
             <!-- Enable/Disable -->
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="enable_mitigation">
@@ -84,9 +93,8 @@
                 <input type="hidden" name="action" value="disable_mitigation">
                 <button type="submit" class="btn btn-warning">Disable Mitigations</button>
             </form>
-
-            <!-- Clear Cache -->
             <hr>
+            <!-- Clear Cache -->
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="clear_cache">
                 <button type="submit" class="btn btn-danger">Clear Cache</button>
@@ -94,7 +102,7 @@
         </div>
     </div>
 
-    <!-- 3. Attack Launch Form -->
+    <!-- Attack Launch Form -->
     <div class="card mb-4">
         <div class="card-header">
             <h3>Launch DoS Attack</h3>
@@ -125,7 +133,7 @@
                     <input type="number" class="form-control" id="duration" name="duration" value="10" required>
                 </div>
                 <div class="form-group">
-                    <label for="rate">Rate (connections or requests/sec)</label>
+                    <label for="rate">Rate (connections or packets/sec)</label>
                     <input type="number" class="form-control" id="rate" name="rate" value="100" required>
                 </div>
                 <button type="submit" class="btn btn-danger">Start Attack</button>
@@ -141,9 +149,9 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 
 <script>
-  //=======================
+  //========================
   // Socket.IO for metrics
-  //=======================
+  //========================
   var socket = io({ transports: ['websocket'] });
 
   socket.on('connect', function() {
@@ -162,16 +170,20 @@
     // 1) Current Connections
     connectionsChart.data.datasets[0].data.push({ x: now, y: data.current_connections });
 
-    // 2) Denied Connections (cumulative)
+    // 2) Denied Connections
     deniedChart.data.datasets[0].data.push({ x: now, y: data.denied_connections });
 
-    // If server is crashed
-    if (data.server_crashed) {
-      alert("SERVER CRASHED: " + data.server_crashed_message);
-    }
+    // 3) UDP Packets per Second
+    udpPacketsChart.data.datasets[0].data.push({ x: now, y: data.udp_pps });
 
     connectionsChart.update('none');
     deniedChart.update('none');
+    udpPacketsChart.update('none');
+
+    // If server crashed
+    if (data.server_crashed) {
+      alert("SERVER CRASHED: " + data.server_crashed_message);
+    }
   });
 
   //=======================
@@ -210,9 +222,9 @@
     }
   });
 
-  //=======================
+  //========================
   // Denied Chart
-  //=======================
+  //========================
   var ctx2 = document.getElementById('deniedChart').getContext('2d');
   var deniedChart = new Chart(ctx2, {
     type: 'line',
@@ -240,6 +252,42 @@
           title: {
             display: true,
             text: 'Denied'
+          }
+        }
+      }
+    }
+  });
+
+  //========================
+  // UDP PPS Chart
+  //========================
+  var ctx3 = document.getElementById('udpPacketsChart').getContext('2d');
+  var udpPacketsChart = new Chart(ctx3, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'UDP PPS',
+        borderColor: 'rgba(153,102,255,1)',
+        fill: false,
+        data: []
+      }]
+    },
+    options: {
+      scales: {
+        x: {
+          type: 'realtime',
+          realtime: {
+            duration: 120000,
+            refresh: 1000,
+            delay: 2000
+          }
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: 10,
+          title: {
+            display: true,
+            text: 'Packets/sec'
           }
         }
       }

@@ -12,9 +12,11 @@ class Firewall:
 
         # Tracks how many connections are currently active (not blocked)
         self.active_connections = 0
-
         # A single cumulative count of how many connections have been denied
         self.denied_connections = 0
+
+        # Track timestamps of allowed UDP packets for PPS calculation
+        self.udp_packet_timestamps = []
 
     def enable_mitigation(self):
         self.mitigation_enabled = True
@@ -32,6 +34,7 @@ class Firewall:
         self.blocked_ips = {}
         self.active_connections = 0
         self.denied_connections = 0
+        self.udp_packet_timestamps = []
         print("[FIREWALL] All caches/logs have been reset.")
 
     def is_blocked(self, ip):
@@ -60,7 +63,7 @@ class Firewall:
 
         current_time = time.time()
 
-        # Track the timestamps for this IP
+        # Track the timestamps for this IP (for rate-limiting logic)
         if ip not in self.connection_log:
             self.connection_log[ip] = []
         self.connection_log[ip].append(current_time)
@@ -87,9 +90,16 @@ class Firewall:
         return True
 
     def end_connection(self, ip):
-        """Called when the connection closes."""
+        """Called when the connection closes (TCP or short-lived UDP)."""
         if self.active_connections > 0:
             self.active_connections -= 1
+
+    def record_udp_packet(self):
+        """
+        Called once for every allowed UDP packet. We store a timestamp,
+        which we'll use in Monitor to compute packets-per-second.
+        """
+        self.udp_packet_timestamps.append(time.time())
 
     def prune_blocked_ips(self):
         """Periodically remove IPs whose block time has expired."""

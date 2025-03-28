@@ -22,6 +22,7 @@ def udp_flood(target_ip, target_port, duration, rate):
         sock.sendto(data, (target_ip, target_port))
         packet_count += 1
 
+        # Sleep enough to achieve ~ rate pkts/sec
         time.sleep(1 / rate)
 
     sock.close()
