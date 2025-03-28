@@ -2,7 +2,6 @@ import threading
 import eventlet
 import time
 import logging
-
 eventlet.monkey_patch()
 
 from flask import Flask, render_template, request, flash
@@ -17,18 +16,12 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app, logger=True, engineio_logger=True)
-
 active_attacks = {}
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """
-    Single page that:
-      - Displays real-time charts
-      - Displays mitigation forms
-      - Displays the "start attack" form
-      - Has a "clear cache" button
-      - Processes form submissions (POST)
+    Single page with real-time charts, mitigation forms, and an attack launcher.
     """
     if request.method == 'POST':
         action = request.form.get('action')
@@ -80,16 +73,11 @@ def index():
 
     return render_template('index.html', firewall=firewall)
 
-
 @socketio.on('connect')
 def handle_connect():
     app.logger.debug("SocketIO client connected.")
 
-
 def emit_metrics():
-    """
-    Background thread to emit firewall/monitor metrics every 1s.
-    """
     while True:
         eventlet.sleep(1)
         try:
@@ -99,7 +87,6 @@ def emit_metrics():
             app.logger.error("Error in emit_metrics: %s", e)
             break
 
-# Start sending metrics in the background
 socketio.start_background_task(target=emit_metrics)
 
 if __name__ == '__main__':
