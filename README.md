@@ -49,7 +49,3 @@ This project is for **educational** purposes only. It demonstrates how Denial of
 - **Performance and Environment**:  
   - This is a **demo** tool, not optimized for high-performance attacks or real-world defense.  
   - For serious testing, isolate your environment (e.g., local VMs or test lab).
-
-## License
-
-[MIT License](https://opensource.org/licenses/MIT)
